@@ -1,0 +1,119 @@
+	^["@/pico/pico.ceu"]
+
+
+pico-state-set-title("corrida dinossauro")
+pico-state-set-size-pixel([1,1])
+pico-state-set-size([1000,315])
+pico-state-set-grid(false)
+pico-state-set-auto(false)
+val WIN :XY = pico-state-get-size()
+
+
+task objeto (pos:XY) {
+	var objetoRandom = random-next()%5
+	var vel = 3
+    par {
+        every :Pico.Frame {
+            set pos.x = pos.x - vel
+            if(pos.x < -515){
+				set pos.x = 1600
+				set objetoRandom = random-next()%5
+			}
+        }
+    } with {
+        every :Pico.Draw {
+        	ifs{
+        		(objetoRandom == 5) -> pico-state-set-image-crop ([[448,0],[34,70]]) and set pos.y = -70
+				(objetoRandom == 4) -> pico-state-set-image-crop ([[482,0],[34,70]]) and set pos.y = -70
+				(objetoRandom == 3) -> pico-state-set-image-crop ([[482,0],[34,70]]) and set pos.y = -70
+				(objetoRandom == 2) -> pico-state-set-image-crop ([[652,0],[48,96]]) and set pos.y = -58
+				(objetoRandom == 1) -> pico-state-set-image-crop ([[700,0],[48,96]]) and set pos.y = -58
+				(objetoRandom == 0)	-> pico-state-set-image-crop ([[748,0],[48,96]]) and set pos.y = -58
+        	}
+			pico-output-draw-image([pos.x,pos.y], "gameSprite.png")
+        }
+    } with{
+    	loop{
+			await 5000:ms
+			if(vel <= 12){
+				 set vel = vel + 1
+			}
+		}
+    
+    }
+}
+
+task fundoTela (pos:XY) {
+    par {
+        every :Pico.Frame {
+            set pos.x = pos.x - 2
+            if(pos.x < -963){
+				set pos.x = 964
+			}
+        }
+    } with {
+        every :Pico.Draw {
+   		 	pico-state-set-image-crop()
+			pico-output-draw-image([pos.x,pos.y], "bg2.png")
+        }
+    }
+}
+
+task Dino (pos:XY){
+	var dy = 0
+	var recorteX = 1340;
+	
+	spawn{
+		par{
+	    	loop{
+				await :Pico.Key.Up, (evt.key == :Key-W) or (pos.y <= -70)
+				awaiting 1000:ms{
+					every :Pico.Frame {
+						set pos.y = pos.y + 5	
+					} 
+				}
+				awaiting 1000:ms{
+					every :Pico.Frame {
+						set pos.y = pos.y - 5
+					} 	
+				}  
+			}
+		}
+		with{
+		
+		}
+	}
+	
+    par {
+		every :Pico.Frame {
+			set dy = dy + 1
+			if(dy > 3){
+				set recorteX = recorteX + 87
+				set dy = 0
+				if(recorteX > 1648) {
+					set recorteX = 1341
+				}
+			}	
+		} 
+    } with {
+        every :Pico.Draw {
+        		pico-state-set-image-crop ([[recorteX,0],[87,100]])
+        		pico-output-draw-image([pos.x,pos.y], "gameSprite.png")
+        }
+    }
+}
+
+spawn fundoTela ([0,0])
+spawn fundoTela ([965,0])
+spawn fundoTela ([1930,0])
+
+val Dinos = tasks(1)
+spawn in Dinos, Dino([-405,-70]) 
+val objetos = tasks(7)
+spawn in objetos, objeto([-200,-70])
+spawn in objetos, objeto([400,-70]) 
+spawn in objetos, objeto([1000,-70]) 
+spawn in objetos, objeto([1600,-70]) 
+
+
+pico-loop()
